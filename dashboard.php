@@ -40,35 +40,37 @@ $role_description = $role_descriptions[$role] ?? 'Willkommen!';
                 <span class="role-badge role-administrator"><?php echo $role; ?></span>
             </div>
             <div class="navbar-center">
-                <div class="time-display" id="timeDisplay" title="Klicken für Menü">00:00:00.000</div>
-                <div class="time-dropdown" id="timeDropdown">
-                    <ul>
-                        <li><a href="desktop.php">🖥️ Desktop</a></li>
-                        <li class="dropdown-divider"></li>
-                        <li><a href="#" onclick="openApplication('Editor'); return false;">📄 Editor</a></li>
-                        <li><a href="#" onclick="openApplication('Notizen'); return false;">📝 Notizen</a></li>
-                        <li><a href="#" onclick="openApplication('Taschenrechner'); return false;">🧮 Taschenrechner</a></li>
-                        <li class="dropdown-divider"></li>
-                        <li class="dropdown-submenu">
-                            <a href="#">🔧 Verwalten</a>
-                            <div class="submenu">
-                                <?php if($current_role_level >= 2): ?>
-                                    <a href="#" onclick="openApplication('Konsumenten verwalten'); return false;">👥 Konsumenten</a>
-                                <?php endif; ?>
-                                <?php if($current_role_level >= 3): ?>
-                                    <a href="#" onclick="openApplication('Slaves verwalten'); return false;">🔗 Slaves</a>
-                                <?php endif; ?>
-                                <?php if($current_role_level >= 4): ?>
-                                    <a href="#" onclick="openApplication('Benutzer verwalten'); return false;">👔 Benutzer</a>
-                                <?php endif; ?>
-                                <?php if($current_role_level >= 5): ?>
-                                    <a href="#" onclick="openApplication('Systemverwaltung'); return false;">⚙️ System</a>
-                                <?php endif; ?>
-                            </div>
-                        </li>
-                        <li class="dropdown-divider"></li>
-                        <li><a href="#" onclick="openApplication('Einstellungen'); return false;">⚙️ Einstellungen</a></li>
-                    </ul>
+                <div class="time-display-wrapper">
+                    <div class="time-display" id="timeDisplay" title="Klicken für Menü">00:00:00.000</div>
+                    <div class="time-dropdown" id="timeDropdown">
+                        <ul>
+                            <li><a href="desktop.php">🖥️ Desktop</a></li>
+                            <li class="dropdown-divider"></li>
+                            <li><a href="#" onclick="openApplication('Editor'); return false;">📄 Editor</a></li>
+                            <li><a href="#" onclick="openApplication('Notizen'); return false;">📝 Notizen</a></li>
+                            <li><a href="#" onclick="openApplication('Taschenrechner'); return false;">🧮 Taschenrechner</a></li>
+                            <li class="dropdown-divider"></li>
+                            <li class="dropdown-submenu">
+                                <a href="#">🔧 Verwalten</a>
+                                <div class="submenu">
+                                    <?php if($current_role_level >= 2): ?>
+                                        <a href="#" onclick="openApplication('Konsumenten verwalten'); return false;">👥 Konsumenten</a>
+                                    <?php endif; ?>
+                                    <?php if($current_role_level >= 3): ?>
+                                        <a href="#" onclick="openApplication('Slaves verwalten'); return false;">🔗 Slaves</a>
+                                    <?php endif; ?>
+                                    <?php if($current_role_level >= 4): ?>
+                                        <a href="#" onclick="openApplication('Benutzer verwalten'); return false;">👔 Benutzer</a>
+                                    <?php endif; ?>
+                                    <?php if($current_role_level >= 5): ?>
+                                        <a href="#" onclick="openApplication('Systemverwaltung'); return false;">⚙️ System</a>
+                                    <?php endif; ?>
+                                </div>
+                            </li>
+                            <li class="dropdown-divider"></li>
+                            <li><a href="#" onclick="openApplication('Einstellungen'); return false;">⚙️ Einstellungen</a></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
             <div class="navbar-right">
@@ -178,22 +180,41 @@ $role_description = $role_descriptions[$role] ?? 'Willkommen!';
         updateTime();
         setInterval(updateTime, 50);
 
-        // ===== DROPDOWNS =====
-        document.getElementById('timeDisplay').addEventListener('click', function(e) {
+        // ===== DROPDOWNS - REPARIERT =====
+        document.getElementById('timeDisplay').onclick = function(e) {
             e.stopPropagation();
-            closeDropdowns();
-            document.getElementById('timeDropdown').classList.add('active');
-        });
-        
-        document.getElementById('userBtn').addEventListener('click', function(e) {
+            const timeDropdown = document.getElementById('timeDropdown');
+            const userDropdown = document.getElementById('userDropdown');
+            
+            userDropdown.classList.remove('active');
+            timeDropdown.classList.toggle('active');
+        };
+
+        document.getElementById('userBtn').onclick = function(e) {
             e.stopPropagation();
+            const timeDropdown = document.getElementById('timeDropdown');
+            const userDropdown = document.getElementById('userDropdown');
+            
+            timeDropdown.classList.remove('active');
+            userDropdown.classList.toggle('active');
+        };
+
+        document.onclick = function(e) {
+            if(e.target.closest('.navbar') || 
+               e.target.closest('.time-dropdown') || 
+               e.target.closest('.user-dropdown') ||
+               e.target.closest('.dropdown-submenu') ||
+               e.target.closest('.submenu')) {
+                return;
+            }
+            
+            const modal = document.getElementById('appModal');
+            if(modal && modal.classList.contains('active') && e.target === modal) {
+                return;
+            }
+            
             closeDropdowns();
-            document.getElementById('userDropdown').classList.add('active');
-        });
-        
-        document.addEventListener('click', function() {
-            closeDropdowns();
-        });
+        };
 
         function closeDropdowns() {
             document.getElementById('timeDropdown').classList.remove('active');
@@ -436,9 +457,6 @@ $role_description = $role_descriptions[$role] ?? 'Willkommen!';
                         <p style="margin: 0;">${roleDescriptions['<?php echo $role; ?>'] || 'Willkommen!'}</p>
                     </div>
                     <h4>Berechtigungslevel: <?php echo $current_role_level; ?> / 5</h4>
-                    <div style="display: flex; gap: 5px; margin-bottom: 15px;">
-                        ${Array.from({length: 5}, (_, i) => '<div style="flex: 1; height: 20px; background: ' + (i < <?php echo $current_role_level; ?> ? '#00a8e8' : '#e0e0e0') + '; border-radius: 3px;"></div>').join('')}
-                    </div>
                 </div>
             `;
         }
